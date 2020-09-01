@@ -41,6 +41,12 @@ type libusbDevHandle C.libusb_device_handle
 type libusbTransfer C.struct_libusb_transfer
 type libusbEndpoint C.struct_libusb_endpoint_descriptor
 
+var handleEventsErrorLogging = false
+
+func SetEventsErrorLogging(enabled bool) {
+	handleEventsErrorLogging = enabled
+}
+
 func (ep libusbEndpoint) endpointDesc(dev *DeviceDesc) EndpointDesc {
 	ei := EndpointDesc{
 		Address:       EndpointAddress(ep.bEndpointAddress),
@@ -188,7 +194,9 @@ func (libusbImpl) handleEvents(c *libusbContext, done <-chan struct{}) {
 		default:
 		}
 		if errno := C.libusb_handle_events_timeout_completed((*C.libusb_context)(c), &tv, nil); errno < 0 {
-			log.Printf("handle_events: error: %s", Error(errno))
+			if handleEventsErrorLogging {
+				log.Printf("handle_events: error: %s", Error(errno))
+			}
 		}
 	}
 }
